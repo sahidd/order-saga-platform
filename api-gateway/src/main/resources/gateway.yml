@@ -1,0 +1,54 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+            - id: orders
+              uri: ${app.routes.order}
+              predicates:
+                - Path=/api/orders/**,/api/ops/**
+            - id: products
+              uri: ${app.routes.inventory}
+              predicates:
+                - Path=/api/products/**
+            - id: payments
+              uri: ${app.routes.payment}
+              predicates:
+                - Path=/api/payments/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when_authorized
+  tracing:
+    sampling:
+      probability: 1.0
+  otlp:
+    tracing:
+      endpoint: ${MANAGEMENT_OTLP_TRACING_ENDPOINT:http://localhost:4318/v1/traces}
+
+logging:
+  structured:
+    format:
+      console: logstash
+
+app:
+  routes:
+    order: ${APP_ROUTES_ORDER:http://localhost:8081}
+    inventory: ${APP_ROUTES_INVENTORY:http://localhost:8082}
+    payment: ${APP_ROUTES_PAYMENT:http://localhost:8083}
+  jwt:
+    issuer: ${APP_JWT_ISSUER:http://localhost:8180/realms/order-saga}
+    jwk-set-uri: ${APP_JWT_JWK_SET_URI:http://localhost:8180/realms/order-saga/protocol/openid-connect/certs}

@@ -1,0 +1,21 @@
+app:
+  jwt:
+    secret: test-only-jwt-secret-change-me-please-32b
+
+management:
+  tracing:
+    sampling:
+      probability: 0
+  otlp:
+    tracing:
+      export:
+        enabled: false
+      endpoint: http://127.0.0.1:9/v1/traces
+
+logging:
+  structured:
+    format:
+      console: logstash
+  level:
+    root: WARN
+    com.sahidanwar: INFO
