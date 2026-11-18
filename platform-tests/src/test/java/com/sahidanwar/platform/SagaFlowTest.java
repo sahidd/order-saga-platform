@@ -156,6 +156,9 @@ class SagaFlowTest {
         // classpath check does not reject these MVC services.
         args.add("--spring.cloud.gateway.server.webflux.enabled=false");
         args.add("--spring.main.web-application-type=servlet");
+        // Gateway's Redis rate limiter needs the (disabled) gateway core, so skip it here too.
+        args.add("--spring.autoconfigure.exclude="
+                + "org.springframework.cloud.gateway.config.GatewayRedisAutoConfiguration");
         return new SpringApplicationBuilder(type)
                 .web(WebApplicationType.SERVLET)
                 .run(args.toArray(String[]::new));
