@@ -6,9 +6,9 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 
 import javax.crypto.SecretKey;
@@ -32,18 +32,18 @@ public class SecurityConfig {
 
     @Bean
     @Profile("!test")
-    JwtDecoder keycloakDecoder(
+    ReactiveJwtDecoder keycloakDecoder(
             @org.springframework.beans.factory.annotation.Value("${app.jwt.jwk-set-uri}") String jwkSetUri,
             @org.springframework.beans.factory.annotation.Value("${app.jwt.issuer}") String issuer) {
-        NimbusJwtDecoder decoder = NimbusJwtDecoder.withJwkSetUri(jwkSetUri).build();
+        NimbusReactiveJwtDecoder decoder = NimbusReactiveJwtDecoder.withJwkSetUri(jwkSetUri).build();
         decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(issuer));
         return decoder;
     }
 
     @Bean
     @Profile("test")
-    JwtDecoder testDecoder(@org.springframework.beans.factory.annotation.Value("${app.jwt.secret}") String secret) {
+    ReactiveJwtDecoder testDecoder(@org.springframework.beans.factory.annotation.Value("${app.jwt.secret}") String secret) {
         SecretKey key = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
-        return NimbusJwtDecoder.withSecretKey(key).build();
+        return NimbusReactiveJwtDecoder.withSecretKey(key).build();
     }
 }
