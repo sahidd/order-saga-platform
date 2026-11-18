@@ -10,6 +10,7 @@ import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.WebApplicationType;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.HttpHeaders;
@@ -150,12 +151,21 @@ class SagaFlowTest {
     }
 
     private static ConfigurableApplicationContext start(Class<?> type, String configName, String database) {
-        return new SpringApplicationBuilder(type).run(serviceArguments(configName, database));
+        List<String> args = new ArrayList<>(List.of(serviceArguments(configName, database)));
+        // The gateway jar is on this test classpath. Leave it disabled so its servlet
+        // classpath check does not reject these MVC services.
+        args.add("--spring.cloud.gateway.server.webflux.enabled=false");
+        args.add("--spring.main.web-application-type=servlet");
+        return new SpringApplicationBuilder(type)
+                .web(WebApplicationType.SERVLET)
+                .run(args.toArray(String[]::new));
     }
 
     private static ConfigurableApplicationContext startGateway(int orderPort, int inventoryPort, int paymentPort) {
         List<String> args = new ArrayList<>(List.of(baseArguments("gateway")));
-        args.add("--spring.main.web-application-type=reactive");
+        // Set the type before the environment is created. A command-line property is applied
+        // too late: classpath deduction already built a servlet environment, and that environment
+        // makes Gateway's "MVC on the classpath" check match.
         args.add("--spring.autoconfigure.exclude="
                 + "org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
                 + "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
@@ -166,7 +176,9 @@ class SagaFlowTest {
         args.add("--app.routes.order=http://127.0.0.1:" + orderPort);
         args.add("--app.routes.inventory=http://127.0.0.1:" + inventoryPort);
         args.add("--app.routes.payment=http://127.0.0.1:" + paymentPort);
-        return new SpringApplicationBuilder(GatewayApplication.class).run(args.toArray(String[]::new));
+        return new SpringApplicationBuilder(GatewayApplication.class)
+                .web(WebApplicationType.REACTIVE)
+                .run(args.toArray(String[]::new));
     }
 
     private static String[] serviceArguments(String configName, String database) {
